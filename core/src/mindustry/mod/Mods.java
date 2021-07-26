@@ -37,6 +37,7 @@ public class Mods implements Loadable{
 
     private int totalSprites;
     private MultiPacker packer;
+    private ModClassLoader mainLoader = new ModClassLoader(getClass().getClassLoader());
 
     Seq<LoadedMod> mods = new Seq<>();
     private ObjectMap<Class<?>, ModMeta> metas = new ObjectMap<>();
@@ -44,6 +45,11 @@ public class Mods implements Loadable{
 
     public Mods(){
         Events.on(ClientLoadEvent.class, e -> Core.app.post(this::checkWarnings));
+    }
+
+    /** @return the main class loader for all mods */
+    public ClassLoader mainLoader(){
+        return mainLoader;
     }
 
     /** Returns a file named 'config.json' in a special folder for the specified plugin.
@@ -213,20 +219,20 @@ public class Mods implements Loadable{
 
     private PageType getPage(AtlasRegion region){
         return
-            region.texture == Core.atlas.find("white").texture ? PageType.main :
-            region.texture == Core.atlas.find("stone1").texture ? PageType.environment :
-            region.texture == Core.atlas.find("clear-editor").texture ? PageType.editor :
-            region.texture == Core.atlas.find("whiteui").texture ? PageType.ui :
-            PageType.main;
+        region.texture == Core.atlas.find("white").texture ? PageType.main :
+        region.texture == Core.atlas.find("stone1").texture ? PageType.environment :
+        region.texture == Core.atlas.find("clear-editor").texture ? PageType.editor :
+        region.texture == Core.atlas.find("whiteui").texture ? PageType.ui :
+        PageType.main;
     }
 
     private PageType getPage(Fi file){
         String parent = file.parent().name();
         return
-            parent.equals("environment") ? PageType.environment :
-            parent.equals("editor") ? PageType.editor :
-            parent.equals("ui") || file.parent().parent().name().equals("ui") ? PageType.ui :
-            PageType.main;
+        parent.equals("environment") ? PageType.environment :
+        parent.equals("editor") ? PageType.editor :
+        parent.equals("ui") || file.parent().parent().name().equals("ui") ? PageType.ui :
+        PageType.main;
     }
 
     /** Removes a mod file and marks it for requiring a restart. */
@@ -312,10 +318,10 @@ public class Mods implements Loadable{
 
         for(LoadedMod mod : mods){
             mod.state =
-                !mod.isSupported() ? ModState.unsupported :
-                mod.hasUnmetDependencies() ? ModState.missingDependencies :
-                !mod.shouldBeEnabled() ? ModState.disabled :
-                ModState.enabled;
+            !mod.isSupported() ? ModState.unsupported :
+            mod.hasUnmetDependencies() ? ModState.missingDependencies :
+            !mod.shouldBeEnabled() ? ModState.disabled :
+            ModState.enabled;
         }
     }
 
@@ -361,7 +367,7 @@ public class Mods implements Loadable{
                 //ignore special folders like bundles or sprites
                 if(file.isDirectory() && !specialFolders.contains(file.name())){
                     file.walk(f -> tree.addFile(mod.file.isDirectory() ? f.path().substring(1 + mod.file.path().length()) :
-                        zipFolder ? f.path().substring(parentName.length() + 1) : f.path(), f));
+                    zipFolder ? f.path().substring(parentName.length() + 1) : f.path(), f));
                 }
             }
 
@@ -398,7 +404,7 @@ public class Mods implements Loadable{
     private void checkWarnings(){
         //show 'scripts have errored' info
         if(scripts != null && scripts.hasErrored()){
-           ui.showErrorMessage("@mod.scripts.disable");
+            ui.showErrorMessage("@mod.scripts.disable");
         }
 
         //show list of errored content
@@ -634,10 +640,10 @@ public class Mods implements Loadable{
             }
 
             Fi metaf =
-                zip.child("mod.json").exists() ? zip.child("mod.json") :
-                zip.child("mod.hjson").exists() ? zip.child("mod.hjson") :
-                zip.child("plugin.json").exists() ? zip.child("plugin.json") :
-                zip.child("plugin.hjson");
+            zip.child("mod.json").exists() ? zip.child("mod.json") :
+            zip.child("mod.hjson").exists() ? zip.child("mod.hjson") :
+            zip.child("plugin.json").exists() ? zip.child("plugin.json") :
+            zip.child("plugin.hjson");
 
             if(!metaf.exists()){
                 Log.warn("Mod @ doesn't have a '[mod/plugin].[h]json' file, skipping.", sourceFile);
@@ -690,18 +696,19 @@ public class Mods implements Loadable{
             //make sure the main class exists before loading it; if it doesn't just don't put it there
             //if the mod is explicitly marked as java, try loading it anyway
             if(
-                (mainFile.exists() || meta.java) &&
-                !skipModLoading() &&
-                Core.settings.getBool("mod-" + baseName + "-enabled", true) &&
-                Version.isAtLeast(meta.minGameVersion) &&
-                (meta.getMinMajor() >= 105 || headless)
+            (mainFile.exists() || meta.java) &&
+            !skipModLoading() &&
+            Core.settings.getBool("mod-" + baseName + "-enabled", true) &&
+            Version.isAtLeast(meta.minGameVersion) &&
+            (meta.getMinMajor() >= 105 || headless)
             ){
 
                 if(ios){
                     throw new IllegalArgumentException("Java class mods are not supported on iOS.");
                 }
 
-                loader = platform.loadJar(sourceFile, mainClass);
+                loader = platform.loadJar(sourceFile, mainLoader);
+                mainLoader.addChild(loader);
                 Class<?> main = Class.forName(mainClass, true, loader);
                 metas.put(main, meta);
                 mainMod = (Mod)main.getDeclaredConstructor().newInstance();
@@ -920,18 +927,18 @@ public class Mods implements Loadable{
             int dot = ver.indexOf(".");
             return dot != -1 ? Strings.parseInt(ver.substring(0, dot), 0) : Strings.parseInt(ver, 0);
         }
-        
+
         @Override
         public String toString() {
             return "ModMeta{" +
-                    "name='" + name + '\'' +
-                    ", author='" + author + '\'' +
-                    ", version='" + version + '\'' +
-                    ", main='" + main + '\'' +
-                    ", minGameVersion='" + minGameVersion + '\'' +
-                    ", hidden=" + hidden +
-                    ", repo=" + repo +
-                    '}';
+            "name='" + name + '\'' +
+            ", author='" + author + '\'' +
+            ", version='" + version + '\'' +
+            ", main='" + main + '\'' +
+            ", minGameVersion='" + minGameVersion + '\'' +
+            ", hidden=" + hidden +
+            ", repo=" + repo +
+            '}';
         }
     }
 

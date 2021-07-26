@@ -710,7 +710,7 @@ public class ContentParser{
         if(out != null) return (Class<T>)out;
 
         //try to resolve it as a raw class name if it's allowed
-        if(base.indexOf('.') != -1 && Scripts.allowClass(base)){
+        if(base.indexOf('.') != -1){
             try{
                 return (Class<T>)Class.forName(base);
             }catch(Exception ignored){
