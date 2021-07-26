@@ -31,6 +31,10 @@ public class Scripts implements Disposable{
         Time.mark();
 
         context = Vars.platform.getScriptContext();
+
+        // The following line enable plugin scripting
+        // context.setApplicationClassLoader(Vars.mods.mainLoader());
+
         scope = new ImporterTopLevel(context);
 
         new RequireBuilder()
