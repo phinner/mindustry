@@ -936,8 +936,8 @@ public class Mods implements Loadable{
                     throw new ModLoadException("Java class mods are not supported on iOS.");
                 }
 
-                loader = platform.loadJar(sourceFile, mainLoader);
-                mainLoader.addChild(loader);
+                loader = platform.loadJar(sourceFile, getClass().getClassLoader());
+                // mainLoader.addChild(loader);
                 Class<?> main = Class.forName(mainClass, true, loader);
 
                 //detect mods that incorrectly package mindustry in the jar
